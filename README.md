@@ -12,13 +12,48 @@ This project demonstrates the process of extracting Gammatone Frequency Cepstral
 
 ### 1. GFCC Extraction
 
-- **Gammatone Filter Bank**: A filter bank based on the Gammatone function is used. This mimics the frequency selectivity of the human auditory system.
-- **GFCC Calculation**: The power spectrum of the audio signal is passed through the Gammatone filter bank. The resulting energies are then log-transformed and a Discrete Cosine Transform (DCT) is applied to obtain the GFCCs.
+The process of extracting Gammatone Frequency Cepstral Coefficients (GFCC) from audio files involves several steps. The main goal is to transform the audio signal into a representation that captures the characteristics of the sound in a way that's similar to how the human auditory system perceives it.
+
+- **Pre-emphasis**: Before extracting the GFCCs, the audio signal undergoes a pre-emphasis step to amplify the high frequencies. This is done to balance the frequency spectrum since high frequencies usually have lower magnitudes compared to lower frequencies.
+
+- **Framing**: The continuous audio signal is divided into short frames. This is based on the assumption that the frequencies in an audio signal are stationary over a short period of time.
+
+- **Windowing**: Each frame is then windowed using a Hamming window to minimize the edge effects.
+
+- **Fourier Transform and Power Spectrum**: A Fourier Transform is applied to each frame to convert it from the time domain to the frequency domain. The magnitude of the result is then squared to get the power spectrum.
+
+- **Gammatone Filter Bank**: 
+  - The human auditory system processes different frequencies selectively. To mimic this behavior, a filter bank based on the Gammatone function is used. The Gammatone filter bank divides the frequency spectrum into overlapping bands that are spaced approximately according to the human ear's critical bandwidths.
+  - The function `make_gammatone_filterbank` creates this filter bank. It uses the `gammatone_filter` function, which generates individual gammatone filters for specified center frequencies.
+  - The `erb_bandwidth` function calculates the Equivalent Rectangular Bandwidth (ERB) for a given frequency, which is used in the design of the gammatone filters.
+
+- **GFCC Calculation**: 
+  - Once the power spectrum is obtained, it is passed through the Gammatone filter bank using matrix multiplication. This results in the energy levels in each of the filter bands.
+  - These energy levels are then log-transformed to mimic the logarithmic perception of loudness and pitch by the human auditory system.
+  - Finally, a Discrete Cosine Transform (DCT) is applied to these log energies to obtain the GFCCs. The DCT has the property of decorrelating the filter bank coefficients, which results in a compressed representation of the filter bank energies. This is analogous to the Mel Frequency Cepstral Coefficients (MFCC) extraction process, but with a filter bank that's designed to mimic the human auditory system more closely.
 
 ### 2. Data Preparation
 
-- **Labeling**: Each audio file is labeled based on the patient's condition. This information is derived from a provided CSV file.
-- **Feature Structuring**: The GFCCs are structured into a suitable format for input into the RNN.
+The process of preparing the data involves converting raw audio files into a structured format suitable for training a machine learning model. This involves several steps:
+
+- **CSV Data Loading**: 
+  - At the beginning of the code, the `csv_file_path` specifies the path to the CSV file that contains the diagnosis for each patient.
+  - The `diagnosis` dictionary is populated using the `csv.reader` function. This dictionary maps patient numbers to their respective diagnoses. For example, `{101: 'URTI', 102: 'Healthy', ...}`.
+
+- **Labeling**: 
+  - Each audio file in the dataset is named in a way that the patient number can be extracted from its filename. This is done using the line `patient_num = int(audio_file.split('_')[0])`.
+  - Once the patient number is extracted, the diagnosis for that patient is looked up in the `diagnosis` dictionary.
+  - The diagnosis is then mapped to a numerical label using the `condition_to_label` dictionary. This dictionary is created based on the unique conditions provided in the `unique_conditions` list. For example, 'COPD' might be mapped to `0`, 'LRTI' to `1`, and so on.
+  - If a condition is not found in the `unique_conditions` list, it's assigned a default label, which is the next number after the last label in the list.
+
+- **Feature Structuring**: 
+  - The GFCCs extracted from each audio file are stored in the `gfcc_features` dictionary, where the key is the filename of the audio file and the value is the GFCC matrix for that file.
+  - Since the audio files can have different lengths, the GFCC matrices can have different numbers of rows (frames). To handle this variability, the `pad_sequences` function is used. This function pads the GFCC matrices with zeros so that they all have the same number of rows. This ensures that the input to the RNN has a consistent shape.
+  - The `gfcc_features` dictionary is then converted into two arrays: `X` and `y`. The `X` array contains the padded GFCC matrices, and the `y` array contains the corresponding labels. These arrays are used as the input features and target labels, respectively, for training the RNN.
+
+- **Data Saving**: 
+  - The `save_to_csv` function is used to save the prepared data to CSV files. This includes the GFCC features (`X`), the labels (`y`), and the original GFCC features with filenames (`gfcc_features`).
+  - This step ensures that the extracted features and labels are stored in a persistent format, making it easier to load and use them in future sessions without having to re-run the entire extraction process.
 
 ### 3. RNN Model
 
