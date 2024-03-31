@@ -1,6 +1,11 @@
 # GFCC to RNN Prediction
 
+![MFCC](mfcc.png)
+
 This project demonstrates the process of extracting Gammatone Frequency Cepstral Coefficients (GFCC) from audio files and using them as input features for a Recurrent Neural Network (RNN) to predict patient conditions.
+
+Presentation for this project can be found [here](https://www.canva.com/design/DAFy_wW4h9c/MUiO0YgN-r88MK8hvSUE-Q/edit?utm_content=DAFy_wW4h9c&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton).
+
 
 ## Overview
 
